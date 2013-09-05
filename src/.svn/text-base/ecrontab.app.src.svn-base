@@ -1,0 +1,12 @@
+{application, ecrontab,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { ecrontab_app, []}},
+  {env, []}
+ ]}.
