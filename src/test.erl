@@ -12,7 +12,7 @@
 -module(test).
 -author('litaocheng@gmail.com').
 -vsn('0.1').
--include("crontab.hrl").
+-include("ecrontab.hrl").
 
 -compile([export_all]).
 
