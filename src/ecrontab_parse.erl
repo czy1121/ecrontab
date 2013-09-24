@@ -12,7 +12,7 @@
 -vsn('0.1').
 -include("ecrontab.hrl").
 
--export([parse/1]).
+-export([parse/1, parse_field/3]).
 
 %% @doc parse the crontab config file
 -spec parse(File :: string()) ->
@@ -89,23 +89,22 @@ parse_field(F, Min, Max, Error) ->
 
 parse_field("*", _Min, _Max) ->
     {?CRON_ANY};
-parse_field(F, Min, Max) when F >= Min, F =< Max ->
-    {?CRON_NUM, F};
 parse_field(F = [_|_], Min, Max) when is_list(F) ->
-    case string:tokens(F, ",") of
-        [Single] -> % is range
-            case parse_range(Single) of
-                {First, Last, _Step} = Range when First >= Min, Last =< Max ->
-                    {?CRON_RANGE, Range}
-            end;
-        [_|_] = Multi -> % is list
-            lists:map(
-                fun(E) ->
-                        parse_field(list_to_integer(E), Min, Max)
-                end,
-                Multi)
-    end.
-     
+    case catch list_to_integer(F) of
+        V when is_integer(V) -> parse_field(V,Min,Max);
+        _ ->
+            case string:tokens(F, ",") of
+                [Single] -> % is range
+                    case parse_range(Single) of
+                        {First, Last, _Step} = Range when First >= Min, Last =< Max ->
+                            {?CRON_RANGE, Range}
+                    end;
+                [_|_] = Multi -> % is list
+                    {?CRON_LIST, lists:map(fun(E) -> parse_field(E, Min, Max) end,Multi)}
+            end
+    end;
+parse_field(F, Min, Max) when F >= Min, F =< Max ->
+    {?CRON_NUM, F}.
 
 %% parse the range string: "2-5/2", "2-5"
 parse_range(Str) ->

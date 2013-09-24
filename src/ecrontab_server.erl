@@ -151,11 +151,7 @@ field_ok(#cron_field{type = ?CRON_NUM, value = Val}, Cur) ->
 field_ok(#cron_field{type = ?CRON_RANGE, value = {First, Last, Step}}, Cur) ->
     range_ok(Cur, First, Last, Step);
 field_ok(#cron_field{type = ?CRON_LIST, value = List}, Cur) ->
-    lists:any(
-        fun(FInList) ->
-                field_ok(FInList, Cur)
-        end,
-        List).
+    lists:any(fun(FInList) -> field_ok(FInList, Cur) end, List).
 
 %% check if the value in the range
 range_ok(Val, First, Last, Step) ->
