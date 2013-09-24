@@ -57,11 +57,11 @@ parse_entrys(CronTab) ->
 parse_entry({{M, H, Dom, Mon, Dow}, {Mod, F, A} = MFA}) when is_atom(Mod), is_atom(F), is_list(A) ->
     Cron =
     #cron_entry{
-        m = parse_field(M, 0, 59, {error, emin}),
-        h = parse_field(H, 0, 23, {error, ehour}),
-        dom = parse_field(Dom, 1, 31, {error, edom}),
-        mon = parse_field(Mon, 1, 12, {error, emon}),
-        dow = parse_field(Dow, 0, 7, {error, edow}),
+        m = parse_field(M, 0, 59, emin),
+        h = parse_field(H, 0, 23, ehour),
+        dom = parse_field(Dom, 1, 31, edom),
+        mon = parse_field(Mon, 1, 12, emon),
+        dow = parse_field(Dow, 0, 7, edow),
         mfa = MFA
     },
     {ok, Cron}; 
@@ -81,9 +81,9 @@ parse_field(F, Min, Max, Error) ->
         {?CRON_LIST, List} ->
             #cron_field{type = ?CRON_LIST, value = List};
         _ ->
-            throw(Error)
-    catch _:_ ->
-        throw(Error)
+            throw({error, Error})
+    catch _:Reason ->
+        throw({error,{Error,Reason}})
     end.
 
 
