@@ -72,23 +72,15 @@ parse_entry(_) ->
 %% parset the fileld
 parse_field(F, Min, Max, Error) ->
     try parse_field(F, Min, Max) of
-        {?CRON_ANY} ->
-            #cron_field{type = ?CRON_RANGE, value = {Min, Max, 1}};
-        {?CRON_NUM, N} ->
-            #cron_field{type = ?CRON_NUM, value = N};
-        {?CRON_RANGE, {_First, _Last, _Step} = Range} ->
-            #cron_field{type = ?CRON_RANGE, value = Range};
-        {?CRON_LIST, List} ->
-            #cron_field{type = ?CRON_LIST, value = List};
-        _ ->
-            throw({error, Error})
+        Result when is_record(Result,cron_field) -> Result;
+        Reason -> throw({error, {Error,Reason}})
     catch _:Reason ->
         throw({error,{Error,Reason}})
     end.
 
 
-parse_field("*", _Min, _Max) ->
-    {?CRON_ANY};
+parse_field("*", Min, Max) ->
+    #cron_field{type = ?CRON_RANGE, value = {Min, Max, 1}};
 parse_field(F = [_|_], Min, Max) when is_list(F) ->
     case catch list_to_integer(F) of
         V when is_integer(V) -> parse_field(V,Min,Max);
@@ -97,14 +89,14 @@ parse_field(F = [_|_], Min, Max) when is_list(F) ->
                 [Single] -> % is range
                     case parse_range(Single) of
                         {First, Last, _Step} = Range when First >= Min, Last =< Max ->
-                            {?CRON_RANGE, Range}
+                            #cron_field{type = ?CRON_RANGE, value = Range}
                     end;
                 [_|_] = Multi -> % is list
-                    {?CRON_LIST, lists:map(fun(E) -> parse_field(E, Min, Max) end,Multi)}
+                    #cron_field{type = ?CRON_LIST, value = lists:map(fun(E) -> parse_field(E, Min, Max) end,Multi)}
             end
     end;
 parse_field(F, Min, Max) when F >= Min, F =< Max ->
-    {?CRON_NUM, F}.
+    #cron_field{type = ?CRON_NUM, value = F}.
 
 %% parse the range string: "2-5/2", "2-5"
 parse_range(Str) ->
