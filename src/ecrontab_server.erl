@@ -24,9 +24,6 @@
         cron_timer :: reference()       % the check cron task timer
     }).
 
--define(CRON_FILE, "crontab.config").
--define(CHECK_FILE_INTERVAL, 60000). % 1 min
--define(CHECK_CRON_INTERVAL, 60000). % 1 min
 -define(SERVER, ?MODULE).
         
 %% @doc start the cron server
@@ -39,19 +36,20 @@ start_link() ->
 %% gen_server callbacks
 init(_Args) ->
     process_flag(trap_exit, true),
-    case ecrontab_parse:parse(?CRON_FILE) of
+    {ok,CronFile} = application:get_env(cronfile),
+    case ecrontab_parse:parse(CronFile) of
         {ok, Entrys} ->
             ?Debug2("parse the crontab success~n", []),
             State = #state{
-                file = ?CRON_FILE,
-                mtime = filelib:last_modified(?CRON_FILE),
+                file = CronFile,
+                mtime = filelib:last_modified(CronFile),
                 entrys = Entrys,
                 file_timer = check_file_timer(),
                 cron_timer = check_cron_timer()
             },
             {ok, State};
         Error ->
-            ?Error2("error :~p", [Error]),
+            ?Error2("error :~p~n", [Error]),
             Error
     end.
 
@@ -78,7 +76,7 @@ handle_info({timeout, _Ref, check_file}, State = #state{file = File, mtime = MTi
                     },
                     {noreply, State3};
                 _Error ->
-                    ?Warn2("the crontab file ~s format error:~p", [File, _Error]),
+                    ?Warn2("the crontab file ~s format error:~p~n", [File, _Error]),
                     {noreply, State2}
             end;
         false ->
@@ -108,11 +106,13 @@ code_change(_Old, State, _Extra) ->
 
 %% start the check file timer
 check_file_timer() ->
-    erlang:start_timer(?CHECK_FILE_INTERVAL, self(), check_file).
+    {ok,Interval} = application:get_env(check_file_interval),
+    erlang:start_timer(Interval, self(), check_file).
 
 %% start the cron tasks timer
 check_cron_timer() ->
-    erlang:start_timer(?CHECK_CRON_INTERVAL, self(), check_cron).
+    {ok,Interval} = application:get_env(check_cron_interval),
+    erlang:start_timer(Interval, self(), check_cron).
 
 
 %% check the cron entrys
@@ -176,7 +176,7 @@ run_task({M, F, A} = Task) ->
         fun() ->
             case catch apply(M, F, A) of
                 {'EXIT', R} ->
-                    ?Error2("cron task ~p error: ~p", [Task, R]),
+                    ?Error2("cron task ~p error: ~p~n", [Task, R]),
                     ok;
                 _ ->
                     ok

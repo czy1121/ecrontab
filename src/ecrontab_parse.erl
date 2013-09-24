@@ -20,10 +20,10 @@
 parse(File) ->
     case file:consult(File) of
         {error, enoent} = Error ->
-            ?Warn2("crontab file ~p not exist", [File]),
+            ?Warn2("crontab file ~p not exist~n", [File]),
             Error;
         {error, R} = Error ->
-            ?Warn2("crontab file error: ~p", [file:format_error(R)]),
+            ?Warn2("crontab file error: ~p~n", [file:format_error(R)]),
             Error;
         {ok, CronTab} ->
             parse_entrys(CronTab)
@@ -44,7 +44,7 @@ parse_entrys(CronTab) ->
                     {ok, CronEntry} ->
                         [CronEntry | Acc];
                     {error, R} ->
-                        ?Warn2("the line :~p error:~p", [Entry, R]),
+                        ?Warn2("the line :~p error:~p~n", [Entry, R]),
                         Acc
                 end
         end,
@@ -101,7 +101,7 @@ parse_field(F = [_|_], Min, Max) when is_list(F) ->
         [_|_] = Multi -> % is list
             lists:map(
                 fun(E) ->
-                        parse_field(E, Min, Max)
+                        parse_field(list_to_integer(E), Min, Max)
                 end,
                 Multi)
     end.
